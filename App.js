@@ -2,6 +2,14 @@ import React from 'react';
 import { Text, View, TouchableOpacity, Vibration } from 'react-native';
 import { Camera, Permissions, FileSystem, Constants } from 'expo';
 
+const COMPVIS_KEY = "c3c21721bcac419ab22cab24d58518bb";
+const COMPVIS_PARAMS = {
+  "visualFeatures": "Description",
+  "details": "{string}",
+  "language": "en",
+};
+const COMPVIS_URL = `https://westus.api.cognitive.microsoft.com/vision/v1.0/analyze?visualFeatures=${COMPVIS_PARAMS.visualFeatures}&language=${COMPVIS_PARAMS.language}`;
+
 export default class App extends React.Component {
   state = {
     flash: 'off',
@@ -37,18 +45,63 @@ export default class App extends React.Component {
       ratio,
     });
   }
+  sendPhotoCompVis(file) {
+    return fetch(COMPVIS_URL, {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Key": COMPVIS_KEY,
+      },
+      body: file,
+    }).then((response) => response.json()).then((responseJson) => {
+      console.log(response.Json.Description);
+    }).catch((error) => {
+      console.log(error);
+    });
+  }
 
   takePicture = async function() {
+    var fileLoc = `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`;
     if(this.camera) {
       this.camera.takePictureAsync().then(data => {
         FileSystem.moveAsync({
           from: data.uri,
-          to: `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`,
+          to: fileLoc,
         }).then(() => {
           this.setState({
             photoId: this.state.photoId + 1,
           });
           Vibration.vibrate();
+          //this.sendPhotoCompVis(`${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`);
+          var xmlHttp = new XMLHttpRequest();
+          xmlHttp.responseType="json";
+          xmlHttp.onreadystatechange = (e) => {
+            //console.log("changed: " + xmlHttp.readyState);
+            if(xmlHttp.readyState == 4){
+              //console.log("ready: " + xmlHttp.status);
+
+              if(xmlHttp.status === 200){
+                console.log(xmlHttp.response.description.captions[0].text);
+              }
+              // debug errors
+              else {
+                console.log(xmlHttp.responseText);
+              }
+            }
+          }
+          xmlHttp.open( "POST", COMPVIS_URL, true);
+          xmlHttp.setRequestHeader("Content-Type","multipart/form-data");
+          xmlHttp.setRequestHeader("Ocp-Apim-Subscription-Key",COMPVIS_KEY);
+          // var jsonBody = {
+          //   "url": `./photos/Photo_${this.state.photoId - 1}.jpg`
+          // }
+          const data = new FormData();
+          data.append('photo', {
+            uri: fileLoc,
+            type: 'image/jpeg',
+            name: 'photo'
+          });
+          xmlHttp.send(data);
         });
       });
     }
