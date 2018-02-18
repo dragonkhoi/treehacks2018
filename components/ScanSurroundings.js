@@ -82,7 +82,7 @@ export default class ScanSurroundings extends React.Component {
           //Declaration of language for translation; currently set to French
           const toTranslate = xmlHttp.response.description.tags[1];
           // let translatedText = this.getTranslate(toTranslate, lang);
-          let threeTags = this.getTags(xmlHttp.response.description.tags);
+          let threeTags = this.getTagsArray(xmlHttp.response.description.tags);
           //TODO: THIS IS AN OBJECT BC IT'S ASYNCHRONOUS...
           let translatedText = this.getTranslate(toTranslate, this.state.lang);
           console.log(`TRANSLATED IS ${translatedText}`)
@@ -113,6 +113,24 @@ export default class ScanSurroundings extends React.Component {
     });
     xmlHttp.send(data);
   }
+
+  getTranslate = async function(text, lang) {
+   const path2 = 'https://api.microsofttranslator.com/V2/Http.svc/Translate?to=' + lang + '&text=' + text;
+   console.log(path2);
+   var xhr = new XMLHttpRequest();
+   xhr.onreadystatechange = function() {
+               if (xhr.readyState == 4 && xhr.status == 200){
+                 var resp = xhr.response;
+                 var translated = resp.substring(68, (resp.length - 9));
+                   return translated;
+               } else {
+               //    alert(xhr.status);
+               }
+           }
+         xhr.open( "GET", path2, true);
+         xhr.setRequestHeader("Ocp-Apim-Subscription-Key","ba9158a351f94a46bbdd9df094428ecb");
+         xhr.send(null);
+};
 
   sendPhotoTags(tagData) {
     console.log(tagData);
