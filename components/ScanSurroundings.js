@@ -109,23 +109,25 @@ export default class ScanSurroundings extends React.Component {
     });
     xmlHttp.send(data);
   }
+
   getTranslate = async function(text, lang) {
-       const path2 = 'https://api.microsofttranslator.com/V2/Http.svc/Translate?to=' + lang + '&text=' + text;
-       console.log(path2);
-       var xhr = new XMLHttpRequest();
-       xhr.onreadystatechange = function() {
-                   if (xhr.readyState == 4 && xhr.status == 200){
-                     var resp = xhr.response;
-                     var translated = resp.substring(68, (resp.length - 9));
-                       return translated;
-                   } else {
-                   //    alert(xhr.status);
-                   }
+   const path2 = 'https://api.microsofttranslator.com/V2/Http.svc/Translate?to=' + lang + '&text=' + text;
+   console.log(path2);
+   var xhr = new XMLHttpRequest();
+   xhr.onreadystatechange = function() {
+               if (xhr.readyState == 4 && xhr.status == 200){
+                 var resp = xhr.response;
+                 var translated = resp.substring(68, (resp.length - 9));
+                   return translated;
+               } else {
+               //    alert(xhr.status);
                }
-             xhr.open( "GET", path2, true);
-             xhr.setRequestHeader("Ocp-Apim-Subscription-Key","ba9158a351f94a46bbdd9df094428ecb");
-             xhr.send(null);
-     };
+           }
+         xhr.open( "GET", path2, true);
+         xhr.setRequestHeader("Ocp-Apim-Subscription-Key","ba9158a351f94a46bbdd9df094428ecb");
+         xhr.send(null);
+       };
+
   // sendPhotoTags(tagData) {
   //   console.log(tagData);
   //   var POSTTAG_URL = "https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/c1e36469-83dc-433c-8044-fa7ef7f31117/images/tags";
