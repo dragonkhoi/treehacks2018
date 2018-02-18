@@ -372,12 +372,15 @@ export default class ScanSurroundings extends React.Component {
     this.setState({
       modal2: false,
     });
+    console.log(`The description I entered was ${this.state.myDesc}`);
+    console.log(`The tag I entered was ${this.state.myTag}`);
+
     //TODO: Start interval and stuff for collecting photos
     this.createTaggedPhoto();
   }
 
   changeLang() {
-    const langs = ["es-es", "fr-fr", "ch-ch"];
+    const langs = ["es-es", "fr-fr", "de-de"];
     for (var i = 0; i < langs.length; i+=1) {
       if (langs[i] === this.state.lang) {
         this.setState({
