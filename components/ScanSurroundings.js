@@ -26,6 +26,7 @@ export default class ScanSurroundings extends React.Component {
     ratio: '16:9',
     ratios: [],
     photoId: 1,
+    photoIdTag: 1,
     whiteBalance: 'auto',
     hasCameraPermission: null,
     type: Camera.Constants.Type.back,
@@ -158,63 +159,6 @@ export default class ScanSurroundings extends React.Component {
          xhr.send(null);
        };
 
-  // sendPhotoTags(tagData) {
-  //   console.log(tagData);
-  //   var POSTTAG_URL = "https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/c1e36469-83dc-433c-8044-fa7ef7f31117/images/tags";
-  //   var xmlHttp = new XMLHttpRequest();
-  //   xmlHttp.responseType="json";
-  //   xmlHttp.onreadystatechange = (e) => {
-  //     console.log(xmlHttp.readyState);
-  //     if(xmlHttp.readyState == 4){
-  //       if(xmlHttp.status === 200){
-  //         console.log(xmlHttp.response);
-  //       }
-  //       else {
-  //         console.log(xmlHttp.response);
-  //       }
-  //     }
-  //   }
-  //   xmlHttp.open( "POST", POSTTAG_URL, true);
-  //   xmlHttp.setRequestHeader("Content-Type","application/json");
-  //   xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
-  //   xmlHttp.send(tagData);
-  // }
-  // tagUntaggedPhotos(tagName){
-  //   var UNTAGGED_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/images/untagged`;
-  //   var xmlHttp = new XMLHttpRequest();
-  //   xmlHttp.responseType="json";
-  //   xmlHttp.onreadystatechange = (e) => {
-  //     console.log(xmlHttp.readyState);
-  //     if(xmlHttp.readyState == 4){
-  //       if(xmlHttp.status === 200){
-  //         console.log(xmlHttp.response);
-  //         var photoIds = [];
-  //         for(var i = 0; i < xmlHttp.response.length; i++){
-  //           console.log(xmlHttp.response[i].Id);
-  //           photoIds.push(xmlHttp.response[i].Id);
-  //         }
-  //
-  //         //for(var i = 0; i < photoIds.length; i++){
-  //           var taggedPhotos = {
-  //             "Tags": [
-  //               {
-  //                 "ImageId": photoIds[0],
-  //                 "TagId": tagName
-  //               }
-  //             ]
-  //           }
-  //           this.sendPhotoTags(taggedPhotos);
-  //         }
-  //       //}
-  //       else {
-  //         console.log(xmlHttp.response);
-  //       }
-  //     }
-  //   }
-  //   xmlHttp.open( "GET", UNTAGGED_URL, true);
-  //   xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
-  //   xmlHttp.send();
-  // }
   getTags(){
     var TAGS_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/tags`;
     var xmlHttp = new XMLHttpRequest();
@@ -247,7 +191,6 @@ export default class ScanSurroundings extends React.Component {
       if(xmlHttp.readyState == 4){
         if(xmlHttp.status === 200){
           console.log(xmlHttp.response);
-          //this.tagUntaggedPhotos("e8a935f3-e61f-4f31-b8d2-25388809c2f2");
         }
         else {
           console.log(xmlHttp.responseJson);
@@ -270,7 +213,7 @@ export default class ScanSurroundings extends React.Component {
     console.log(`TAGARR: ${tagArr.slice(0,3)}`)
     return tagArr.slice(0, 3);
   }
-  createTag(photoData, tag, description) {
+  createTag(tag, description) {
     var CREATE_TAG_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/tags?name=${tag}&description=${description}`;
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.responseType="json";
@@ -279,7 +222,7 @@ export default class ScanSurroundings extends React.Component {
       if(xmlHttp.readyState == 4){
         if(xmlHttp.status === 200){
           console.log(xmlHttp.response);
-          this.sendPhotoCustVis(photoData, xmlHttp.response.Id);
+          this.tagAddInterval = setInterval(this.photoBurst.bind(this, xmlHttp.response.Id),  100);
         }
         else {
           console.log(xmlHttp.responseJson);
@@ -291,7 +234,7 @@ export default class ScanSurroundings extends React.Component {
     xmlHttp.send();
   }
 
-  photoBurst(tag, description) {
+  photoBurst(tagId) {
     const photoData = new FormData();
     this.setState({
       tagAddCounter: this.state.tagAddCounter + 1
@@ -302,7 +245,7 @@ export default class ScanSurroundings extends React.Component {
         tagAddCounter: 0
       });
     }
-    var fileLoc = `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`;
+    var fileLoc = `${FileSystem.documentDirectory}photos/Photo_${this.state.photoIdTag}.jpg`;
     if(this.camera) {
       this.camera.takePictureAsync().then(data => {
         FileSystem.moveAsync({
@@ -310,7 +253,7 @@ export default class ScanSurroundings extends React.Component {
           to: fileLoc,
         }).then(() => {
           this.setState({
-            photoId: this.state.photoId + 1,
+            photoIdTag: this.state.photoIdTag + 1,
           });
           // Vibration.vibrate();
           photoData.append('photo', {
@@ -326,13 +269,13 @@ export default class ScanSurroundings extends React.Component {
           });
           //tag = "test234234";
           //description = "test description, it is super good, SOOOOO great, amazing, wauw, so good, wow, excellent description!";
-          this.createTag(photoData, tag, description);
+          this.sendPhotoCustVis(photoData, tagId);
         });
       });
     }
   }
 
-  createTaggedPhoto(){
+  createTaggedPhoto(tag, description){
     // UI prompt for user to move phone around object
     // take periodic photos, add to form data
     // UI prompt for tag
@@ -340,7 +283,8 @@ export default class ScanSurroundings extends React.Component {
     // send form data
     var sampleTag = "hellloooo";
     var sampleDescription = "BWAHAHAHA";
-    this.tagAddInterval = setInterval(this.photoBurst.bind(this,sampleTag,sampleDescription),  100);
+    this.createTag(tag, description);
+
 
   }
   takePicture = async function() {
@@ -376,7 +320,7 @@ export default class ScanSurroundings extends React.Component {
     console.log(`The tag I entered was ${this.state.myTag}`);
 
     //TODO: Start interval and stuff for collecting photos
-    this.createTaggedPhoto();
+    this.createTaggedPhoto(this.state.myTag, this.state.myDesc);
   }
 
   changeLang() {
