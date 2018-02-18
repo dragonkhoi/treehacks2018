@@ -15,4 +15,3 @@ export default class App extends React.Component {
 const Treehacks_stack = StackNavigator({
   ScanSurroundings: { screen: ScanSurroundings },
 });
-
