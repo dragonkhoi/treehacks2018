@@ -8,8 +8,10 @@ const COMPVIS_PARAMS = {
   "visualFeatures": "Description, Tags",
   "language": "en",
 };
+const CUSTVIS_ID = "c1e36469-83dc-433c-8044-fa7ef7f31117";
+const CUSTVIS_KEY = "8b0f96ec859f40d68efc87fde36f8a11";
 const COMPVIS_URL = `https://westus.api.cognitive.microsoft.com/vision/v1.0/analyze?visualFeatures=${COMPVIS_PARAMS.visualFeatures}&language=${COMPVIS_PARAMS.language}`;
-
+const CUSTVIS_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/c1e36469-83dc-433c-8044-fa7ef7f31117/images?tagIds%5B%5D=e8a935f3-e61f-4f31-b8d2-25388809c2f2`// + //encodeURIComponent(JSON.stringify(["e8a935f3-e61f-4f31-b8d2-25388809c2f2"]));
 export default class ScanSurroundings extends React.Component {
   static navigationOptions = {
     header: null,
@@ -100,7 +102,7 @@ export default class ScanSurroundings extends React.Component {
 
   sendPhotoTags(tagData) {
     console.log(tagData);
-    var POSTTAG_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/images/tags`;
+    var POSTTAG_URL = "https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/c1e36469-83dc-433c-8044-fa7ef7f31117/images/tags";
     //this.getTags();
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.responseType="json";
@@ -304,6 +306,18 @@ export default class ScanSurroundings extends React.Component {
                   <Text
                     style={{ fontSize: 18, marginBottom: 10, color: 'white' }}>
                     {' '}TRANSLATE{' '}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{
+                    flex: 0.1,
+                    alignSelf: 'flex-end',
+                    alignItems: 'center',
+                  }}
+                  onPress={this.createTaggedPhoto.bind(this)}>
+                  <Text
+                    style={{ fontSize: 18, marginBottom: 10, color: 'white' }}>
+                    {' '}tag{' '}
                   </Text>
                 </TouchableOpacity>
               </View>
