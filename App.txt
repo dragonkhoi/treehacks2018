@@ -11,7 +11,7 @@ const COMPVIS_PARAMS = {
 const CUSTVIS_KEY = "8b0f96ec859f40d68efc87fde36f8a11";
 const CUSTVIS_ID = "c1e36469-83dc-433c-8044-fa7ef7f31117";
 const COMPVIS_URL = `https://westus.api.cognitive.microsoft.com/vision/v1.0/analyze?visualFeatures=${COMPVIS_PARAMS.visualFeatures}&language=${COMPVIS_PARAMS.language}`;
-const CUSTVIS_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/images?tagIds=[e8a935f3-e61f-4f31-b8d2-25388809c2f2]`;
+const CUSTVIS_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/images?tagIds=["puppy"]`;
 export default class App extends React.Component {
   state = {
     flash: 'off',
@@ -81,88 +81,7 @@ export default class App extends React.Component {
     });
     xmlHttp.send(data);
   }
-  sendPhotoTags(tagData) {
-    console.log(tagData);
-    var POSTTAG_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/images/tags`;
-    //this.getTags();
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.responseType="json";
-    xmlHttp.onreadystatechange = (e) => {
-      console.log(xmlHttp.readyState);
-      if(xmlHttp.readyState == 4){
-        if(xmlHttp.status === 200){
-          console.log(xmlHttp.response);
-        }
-        else {
-          console.log(xmlHttp.response);
-        }
-      }
-    }
-    xmlHttp.open( "POST", POSTTAG_URL, true);
-    xmlHttp.setRequestHeader("Content-Type","application/json");
-    xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
-    xmlHttp.send(tagData);
-  }
-  tagUntaggedPhotos(tagName){
-    var UNTAGGED_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/images/untagged`;
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.responseType="json";
-    xmlHttp.onreadystatechange = (e) => {
-      console.log(xmlHttp.readyState);
-      if(xmlHttp.readyState == 4){
-        if(xmlHttp.status === 200){
-          console.log(xmlHttp.response);
-          var photoIds = [];
-          for(var i = 0; i < xmlHttp.response.length; i++){
-            console.log(xmlHttp.response[i].Id);
-            photoIds.push(xmlHttp.response[i].Id);
-          }
 
-          //for(var i = 0; i < photoIds.length; i++){
-            var taggedPhotos = {
-              "Tags": [
-                {
-                  "ImageId": photoIds[0],
-                  "TagId": tagName
-                }
-              ]
-            }
-            this.sendPhotoTags(taggedPhotos);
-          }
-        //}
-        else {
-          console.log(xmlHttp.response);
-        }
-      }
-    }
-    xmlHttp.open( "GET", UNTAGGED_URL, true);
-    xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
-    xmlHttp.send();
-  }
-  getTags(){
-    var TAGS_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/tags`;
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.responseType="json";
-    xmlHttp.onreadystatechange = (e) => {
-      console.log(xmlHttp.readyState);
-      if(xmlHttp.readyState == 4){
-        if(xmlHttp.status === 200){
-          console.log(xmlHttp.response);
-          var photoIds = [];
-          for(var i = 0; i < xmlHttp.response.Tags.length; i++){
-            console.log(xmlHttp.response.Tags[i].Id);
-            photoIds.push(xmlHttp.response.Tags[i].Id);
-          }
-        }
-        else {
-          console.log(xmlHttp.response);
-        }
-      }
-    }
-    xmlHttp.open( "GET", TAGS_URL, true);
-    xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
-    xmlHttp.send();
-  }
   sendPhotoCustVis(formData){
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.responseType="json";
@@ -171,7 +90,6 @@ export default class App extends React.Component {
       if(xmlHttp.readyState == 4){
         if(xmlHttp.status === 200){
           console.log(xmlHttp.response);
-          this.tagUntaggedPhotos("e8a935f3-e61f-4f31-b8d2-25388809c2f2");
         }
         else {
           console.log(xmlHttp.responseJson);
@@ -204,13 +122,7 @@ export default class App extends React.Component {
           photoData.append('photo', {
             uri: fileLoc,
             type: 'image/jpeg',
-            name: 'photo',
-            TagsIds: [
-              "puppy"
-            ],
-            Tags: [
-              "puppy"
-            ]
+            name: 'photo'
           });
           this.sendPhotoCustVis(photoData);
         });
