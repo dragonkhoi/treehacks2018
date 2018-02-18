@@ -259,7 +259,7 @@ export default class ScanSurroundings extends React.Component {
     xmlHttp.send();
   }
 
-  photoBurst() {
+  photoBurst(tag, description) {
     const photoData = new FormData();
     this.setState({
       tagAddCounter: this.state.tagAddCounter + 1
@@ -270,15 +270,15 @@ export default class ScanSurroundings extends React.Component {
         tagAddCounter: 0
       });
     }
-    var fileLoc = `${FileSystem.documentDirectory}photos/Photo_${ctx.state.photoId}.jpg`;
-    if(ctx.camera) {
-      ctx.camera.takePictureAsync().then(data => {
+    var fileLoc = `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`;
+    if(this.camera) {
+      this.camera.takePictureAsync().then(data => {
         FileSystem.moveAsync({
           from: data.uri,
           to: fileLoc,
         }).then(() => {
-          ctx.setState({
-            photoId: ctx.state.photoId + 1,
+          this.setState({
+            photoId: this.state.photoId + 1,
           });
           // Vibration.vibrate();
           photoData.append('photo', {
@@ -292,10 +292,9 @@ export default class ScanSurroundings extends React.Component {
               "puppy"
             ]
           });
-          var tag, description;
-          tag = "test234234";
-          description = "test description, it is super good, SOOOOO great, amazing, wauw, so good, wow, excellent description!";
-          ctx.createTag(photoData, tag, description);
+          //tag = "test234234";
+          //description = "test description, it is super good, SOOOOO great, amazing, wauw, so good, wow, excellent description!";
+          this.createTag(photoData, tag, description);
         });
       });
     }
