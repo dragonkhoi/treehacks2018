@@ -23,7 +23,7 @@ export default class LaunchScreen extends React.Component {
         CultureCV
       </Text>
         <Text style={styles.textStyle}>
-          Trade your story around the world.
+          Learn from your world.
         </Text>
         <Image
           style={styles.logoStyle}
@@ -43,7 +43,7 @@ const styles = {
   logoStyle: {
     height: 100,
     width: 200,
-    marginBottom: 40
+    marginBottom: 50
   },
   viewStyle: {
     flex: 1,
@@ -56,6 +56,7 @@ const styles = {
   },
   bigTextStyle: {
     margin: 30,
+    marginBottom: 15,
     fontSize: 25,
     textAlign: 'center',
     lineHeight: 30,
@@ -64,7 +65,7 @@ const styles = {
   textStyle: {
     marginLeft: 30,
     marginRight: 30,
-    marginBottom: 20,
+    marginBottom: 40,
     marginTop: 20,
     fontSize: 20,
     textAlign: 'center',

@@ -35,7 +35,7 @@ export default class ScanSurroundings extends React.Component {
     tag2: "...",
     tag3: "...",
     threeEnglish: [],
-    lang: "es-es",
+    lang: "translate",
     modal1: false,
     modal2: false,
     myTag: "",
@@ -131,6 +131,7 @@ export default class ScanSurroundings extends React.Component {
           if(xmlHttp.response.Name == "origami crane" || xmlHttp.response.Name == "paper crane"){
             combinedString =  xmlHttp.response.Name + ": " + "Paper cranes are known to bring good luck in Japan, a sign of healing";
           }
+
           this.getTranslate(0, combinedString, this.state.lang, this);
           this.setState({
             tag1: "",
@@ -188,6 +189,30 @@ export default class ScanSurroundings extends React.Component {
   }
 
   getTranslate = async function(index, text, lang, ctx) {
+    if (lang === "translate") {
+      let setTo = text;
+      if(index == 0){
+        ctx.setState({
+          description: setTo
+        })
+      }
+      if(index == 1){
+        ctx.setState({
+          tag1: setTo
+         });
+      }
+      if(index == 2){
+        ctx.setState({
+          tag2: setTo
+         });
+      }
+      if(index == 3){
+        ctx.setState({
+          tag3: setTo
+         });
+      }
+    }
+   else {
    const path2 = 'https://api.microsofttranslator.com/V2/Http.svc/Translate?to=' + lang + '&text=' + text;
    console.log(path2);
    var xhr = new XMLHttpRequest();
@@ -195,7 +220,8 @@ export default class ScanSurroundings extends React.Component {
                if (xhr.readyState == 4 && xhr.status == 200){
                  var resp = xhr.response;
                  var translated = resp.substring(68, (resp.length - 9));
-                 var setTo = `${text} (${translated})`;
+                 let setTo;
+                 setTo = `${text} (${translated})`;
                  if(index == 0){
                    ctx.setState({
                      description: setTo
@@ -216,15 +242,23 @@ export default class ScanSurroundings extends React.Component {
                      tag3: setTo
                     });
                  }
-                   return translated;
+                  if (lang === "translate") {
+                    return text;
+                  }
+                  else {
+                    return translated;
+                  }
                } else {
                //    alert(xhr.status);
                }
            }
+
          xhr.open( "GET", path2, true);
          xhr.setRequestHeader("Ocp-Apim-Subscription-Key","ba9158a351f94a46bbdd9df094428ecb");
          xhr.send(null);
+       }
        };
+
 
   getTags(tagName, description){
     var TAGS_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/tags`;
@@ -254,9 +288,9 @@ export default class ScanSurroundings extends React.Component {
           }
           else {
             this.tagAddInterval = setInterval(this.photoBurst.bind(this, tagId),  100);
-            this.setState{description; "Currently scanning! Please move you phone around."};
+            this.setState({description: "Currently scanning! Please move you phone around."});
             clearInterval(this.takePicInterval);
-            this.setState{description; "Scanning complete."};
+            this.setState({description: "Scanning complete."});
           }
         }
         else {
@@ -332,9 +366,9 @@ export default class ScanSurroundings extends React.Component {
         if(xmlHttp.status === 200){
           console.log(xmlHttp.response);
           this.tagAddInterval = setInterval(this.photoBurst.bind(this, xmlHttp.response.Id),  100);
-          this.setState{description; "Currently scanning! Please move you phone around."};
+          this.setState({description: "Currently scanning! Please move you phone around."});
           clearInterval(this.takePicInterval);
-          this.setState{description; "Scanning complete."};
+          this.setState({description: "Scanning complete."});
         }
         else {
           console.log(xmlHttp.responseJson);
@@ -437,7 +471,7 @@ export default class ScanSurroundings extends React.Component {
   }
 
   changeLang() {
-    const langs = ["es-es", "fr-fr", "de-de"];
+    const langs = ["es-es", "fr-fr", "de-de", "translate"];
     for (var i = 0; i < langs.length; i+=1) {
       if (langs[i] === this.state.lang) {
         this.setState({
@@ -445,7 +479,6 @@ export default class ScanSurroundings extends React.Component {
         });
       }
     }
-
   }
 
   render() {
@@ -474,7 +507,7 @@ export default class ScanSurroundings extends React.Component {
               buttonTitle="Submit"
             >
               <Input
-                label="What is meaningful about this photo?"
+                label="What is meaningful about this image?"
                 onChangeText={myDesc => this.setState({ myDesc })}
               >
               </Input>
@@ -541,7 +574,7 @@ const styles = {
   },
   descView: {
     backgroundColor: 'white',
-    height: 60,
+    height: 90,
     margin: 20,
     marginTop: 30,
     borderRadius: 4,
