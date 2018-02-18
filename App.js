@@ -4,7 +4,7 @@ import { Camera, Permissions, FileSystem, Constants } from 'expo';
 
 const COMPVIS_KEY = "c3c21721bcac419ab22cab24d58518bb";
 const COMPVIS_PARAMS = {
-  "visualFeatures": "Description", "Tags",
+  "visualFeatures": "Description, Tags",
   "language": "en",
 };
 const COMPVIS_URL = `https://westus.api.cognitive.microsoft.com/vision/v1.0/analyze?visualFeatures=${COMPVIS_PARAMS.visualFeatures}&language=${COMPVIS_PARAMS.language}`;
@@ -54,8 +54,8 @@ export default class App extends React.Component {
       body: file,
     }).then((response) => response.json()).then((responseJson) => {
       console.log(response.Json.Description);
-      console.log("Tags:");
-      console.log(response.Json.Tags)
+//      console.log("Tags:");
+  //    console.log(response.Json.Tags)
     }).catch((error) => {
       console.log(error);
     });
@@ -83,10 +83,11 @@ export default class App extends React.Component {
 
               if(xmlHttp.status === 200){
                 console.log(xmlHttp.response.description.captions[0].text);
+                console.log(xmlHttp.response.description.tags[3]);
               }
               // debug errors
               else {
-                console.log(xmlHttp.responseText);
+                console.log(xmlHttp.responseJson);
               }
             }
           }
