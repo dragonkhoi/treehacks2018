@@ -40,7 +40,8 @@ export default class ScanSurroundings extends React.Component {
     modal2: false,
     myTag: "",
     myDesc: "",
-    tagAddCounter: 0
+    tagAddCounter: 0,
+    iterationId: ""
   };
 
   async componentWillMount() {
@@ -91,11 +92,11 @@ export default class ScanSurroundings extends React.Component {
           }
           averageConfidence /= totalCount;
           let threeTags = this.getTagsArray(xmlHttp.response.description.tags);
-          this.getTranslate(0, xmlHttp.response.description.captions[0].text, this.state.lang, this);
-          this.getTranslate(1, threeTags[0], this.state.lang, this);
-          this.getTranslate(2, threeTags[1], this.state.lang, this);
-          this.getTranslate(3, threeTags[2], this.state.lang, this);
-          this.quickTestCustomVision(data, averageConfidence);
+          // this.getTranslate(0, xmlHttp.response.description.captions[0].text, this.state.lang, this);
+          // this.getTranslate(1, threeTags[0], this.state.lang, this);
+          // this.getTranslate(2, threeTags[1], this.state.lang, this);
+          // this.getTranslate(3, threeTags[2], this.state.lang, this);
+          this.quickTestCustomVision(data, averageConfidence, threeTags, xmlHttp.response.description.captions[0].text);
         }
         // debug errors
         else {
@@ -117,6 +118,9 @@ export default class ScanSurroundings extends React.Component {
 
   setCustomPhrase(tagData){
     var getTagUrl = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/tags/${tagData.TagId}`;
+    if(this.state.iterationId != ""){
+      getTagUrl += "?iterationId=" + this.state.iterationId;
+    }
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.responseType="json";
     xmlHttp.onreadystatechange = (e) => {
@@ -146,8 +150,11 @@ export default class ScanSurroundings extends React.Component {
 
   }
 
-  quickTestCustomVision(photoData, cvAvg){
+  quickTestCustomVision(photoData, cvAvg, threeTags, descripText){
     var cvUrl = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/quicktest/image`;
+    if(this.state.iterationId != ""){
+      cvUrl += "?iterationId=" + this.state.iterationId;
+    }
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.responseType="json";
     xmlHttp.onreadystatechange = (e) => {
@@ -156,8 +163,14 @@ export default class ScanSurroundings extends React.Component {
           var res = xmlHttp.response;
           console.log("Average for MSFT: " + cvAvg  + " CUSTOM: " + res.Predictions[0].Probability);
           // give our algorithm a bit of a cushion
-          if(res.Predictions[0].Probability > cvAvg * 0.9){
+          if( res.Predictions[0].Probability > (cvAvg * 0.9) - 0.03 ){
             this.setCustomPhrase(res.Predictions[0]);
+          }
+          else{
+            this.getTranslate(0, descripText, this.state.lang, this);
+            this.getTranslate(1, threeTags[0], this.state.lang, this);
+            this.getTranslate(2, threeTags[1], this.state.lang, this);
+            this.getTranslate(3, threeTags[2], this.state.lang, this);
           }
 
 
@@ -215,6 +228,9 @@ export default class ScanSurroundings extends React.Component {
 
   getTags(tagName, description){
     var TAGS_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/tags`;
+    if(this.state.iterationId != ""){
+      TAGS_URL += "?iterationId=" + this.state.iterationId;
+    }
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.responseType="json";
     xmlHttp.onreadystatechange = (e) => {
@@ -234,7 +250,7 @@ export default class ScanSurroundings extends React.Component {
             }
           }
           if(!match){
-            createTag(tagName, description);
+            this.createTag(tagName, description);
           }
           else {
             this.tagAddInterval = setInterval(this.photoBurst.bind(this, tagId),  100);
@@ -257,6 +273,7 @@ export default class ScanSurroundings extends React.Component {
       if(xmlHttp.readyState == 4){
         if(xmlHttp.status === 200){
           console.log(xmlHttp.response);
+
         }
         else {
           console.log(xmlHttp.responseJson);
@@ -268,6 +285,29 @@ export default class ScanSurroundings extends React.Component {
     xmlHttp.setRequestHeader("Content-Type","multipart/form-data");
     xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
     xmlHttp.send(formData);
+  }
+
+  trainProject(){
+    var trainUrl = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/train`;
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.responseType="json";
+    xmlHttp.onreadystatechange = (e) => {
+      console.log(xmlHttp.readyState);
+      if(xmlHttp.readyState == 4){
+        if(xmlHttp.status === 200){
+          console.log(xmlHttp.response);
+          this.setState({
+            iterationId: xmlHttp.response.Id
+          });
+        }
+        else {
+          console.log(xmlHttp.responseJson);
+        }
+      }
+    }
+    xmlHttp.open( "POST", trainUrl, true);
+    xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
+    xmlHttp.send();
   }
 
   getTagsArray(tagArr) {
@@ -306,10 +346,12 @@ export default class ScanSurroundings extends React.Component {
       tagAddCounter: this.state.tagAddCounter + 1
     });
     if(this.state.tagAddCounter > 30){
+      //TODO: have UI notify user that their photos have been taken!
       clearInterval(this.tagAddInterval);
       this.setState({
         tagAddCounter: 0
       });
+      this.trainProject();
     }
     var fileLoc = `${FileSystem.documentDirectory}photos/Photo_${this.state.photoIdTag}.jpg`;
     if(this.camera) {
@@ -385,8 +427,6 @@ export default class ScanSurroundings extends React.Component {
     });
     console.log(`The description I entered was ${this.state.myDesc}`);
     console.log(`The tag I entered was ${this.state.myTag}`);
-
-    //TODO: Start interval and stuff for collecting photos
     this.createTaggedPhoto(this.state.myTag, this.state.myDesc);
   }
 
