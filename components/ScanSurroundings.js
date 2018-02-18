@@ -80,7 +80,7 @@ export default class ScanSurroundings extends React.Component {
           //Declaration of language for translation; currently set to French
           const toTranslate = xmlHttp.response.description.tags[1];
           // let translatedText = this.getTranslate(toTranslate, lang);
-          let threeTags = this.getTags(xmlHttp.response.description.tags);
+          let threeTags = this.getTagsArray(xmlHttp.response.description.tags);
           //TODO: THIS IS AN OBJECT BC IT'S ASYNCHRONOUS...
           let translatedText = this.getTranslate(toTranslate, this.state.lang);
           console.log(`TRANSLATED IS ${translatedText}`)
