@@ -98,6 +98,88 @@ export default class ScanSurroundings extends React.Component {
     xmlHttp.send(data);
   }
 
+  sendPhotoTags(tagData) {
+    console.log(tagData);
+    var POSTTAG_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/images/tags`;
+    //this.getTags();
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.responseType="json";
+    xmlHttp.onreadystatechange = (e) => {
+      console.log(xmlHttp.readyState);
+      if(xmlHttp.readyState == 4){
+        if(xmlHttp.status === 200){
+          console.log(xmlHttp.response);
+        }
+        else {
+          console.log(xmlHttp.response);
+        }
+      }
+    }
+    xmlHttp.open( "POST", POSTTAG_URL, true);
+    xmlHttp.setRequestHeader("Content-Type","application/json");
+    xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
+    xmlHttp.send(tagData);
+  }
+  tagUntaggedPhotos(tagName){
+    var UNTAGGED_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/images/untagged`;
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.responseType="json";
+    xmlHttp.onreadystatechange = (e) => {
+      console.log(xmlHttp.readyState);
+      if(xmlHttp.readyState == 4){
+        if(xmlHttp.status === 200){
+          console.log(xmlHttp.response);
+          var photoIds = [];
+          for(var i = 0; i < xmlHttp.response.length; i++){
+            console.log(xmlHttp.response[i].Id);
+            photoIds.push(xmlHttp.response[i].Id);
+          }
+
+          //for(var i = 0; i < photoIds.length; i++){
+            var taggedPhotos = {
+              "Tags": [
+                {
+                  "ImageId": photoIds[0],
+                  "TagId": tagName
+                }
+              ]
+            }
+            this.sendPhotoTags(taggedPhotos);
+          }
+        //}
+        else {
+          console.log(xmlHttp.response);
+        }
+      }
+    }
+    xmlHttp.open( "GET", UNTAGGED_URL, true);
+    xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
+    xmlHttp.send();
+  }
+  getTags(){
+    var TAGS_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/tags`;
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.responseType="json";
+    xmlHttp.onreadystatechange = (e) => {
+      console.log(xmlHttp.readyState);
+      if(xmlHttp.readyState == 4){
+        if(xmlHttp.status === 200){
+          console.log(xmlHttp.response);
+          var photoIds = [];
+          for(var i = 0; i < xmlHttp.response.Tags.length; i++){
+            console.log(xmlHttp.response.Tags[i].Id);
+            photoIds.push(xmlHttp.response.Tags[i].Id);
+          }
+        }
+        else {
+          console.log(xmlHttp.response);
+        }
+      }
+    }
+    xmlHttp.open( "GET", TAGS_URL, true);
+    xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
+    xmlHttp.send();
+  }
   sendPhotoCustVis(formData){
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.responseType="json";
@@ -106,6 +188,7 @@ export default class ScanSurroundings extends React.Component {
       if(xmlHttp.readyState == 4){
         if(xmlHttp.status === 200){
           console.log(xmlHttp.response);
+          this.tagUntaggedPhotos("e8a935f3-e61f-4f31-b8d2-25388809c2f2");
         }
         else {
           console.log(xmlHttp.responseJson);
@@ -138,32 +221,20 @@ export default class ScanSurroundings extends React.Component {
           photoData.append('photo', {
             uri: fileLoc,
             type: 'image/jpeg',
-            name: 'photo'
+            name: 'photo',
+            TagsIds: [
+              "puppy"
+            ],
+            Tags: [
+              "puppy"
+            ]
           });
           this.sendPhotoCustVis(photoData);
         });
       });
     }
+
   }
-
-  getTranslate = async function(text, lang) {
-     const path2 = 'https://api.microsofttranslator.com/V2/Http.svc/Translate?to=' + lang + '&text=' + text;
-     console.log(path2);
-     var xhr = new XMLHttpRequest();
-     xhr.onreadystatechange = function() {
-                 if (xhr.readyState == 4 && xhr.status == 200){
-                   var resp = xhr.response;
-                   var translated = resp.substring(68, (resp.length - 9));
-                     return translated;
-                 } else {
-                 //    alert(xhr.status);
-                 }
-             }
-           xhr.open( "GET", path2, true);
-           xhr.setRequestHeader("Ocp-Apim-Subscription-Key","ba9158a351f94a46bbdd9df094428ecb");
-           xhr.send(null);
-   };
-
   takePicture = async function() {
     var fileLoc = `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`;
     if(this.camera) {
