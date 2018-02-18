@@ -33,6 +33,7 @@ export default class ScanSurroundings extends React.Component {
     tag1: "...",
     tag2: "...",
     tag3: "...",
+    threeEnglish: [],
     lang: "es-es",
     modal1: false,
     modal2: false,
@@ -82,15 +83,23 @@ export default class ScanSurroundings extends React.Component {
           const toTranslate = xmlHttp.response.description.tags[1];
           // let translatedText = this.getTranslate(toTranslate, lang);
           let threeTags = this.getTagsArray(xmlHttp.response.description.tags);
-          //TODO: THIS IS AN OBJECT BC IT'S ASYNCHRONOUS...
-          let translatedText = this.getTranslate(toTranslate, this.state.lang);
-          console.log(`TRANSLATED IS ${translatedText}`)
-          this.setState({
-            description: `${xmlHttp.response.description.captions[0].text} (${this.getTranslate(xmlHttp.response.description.captions[0].text, this.state.lang)})`,
-            tag1: `${threeTags[0]} (${this.getTranslate(threeTags[0], this.state.lang)})`,
-            tag2: `${threeTags[1]} (${this.getTranslate(threeTags[1], this.state.lang)})`,
-            tag3: `${threeTags[2]} (${this.getTranslate(threeTags[2], this.state.lang)})`,
-           });
+          this.getTranslate(0, xmlHttp.response.description.captions[0].text, this.state.lang, this);
+          this.getTranslate(1, threeTags[0], this.state.lang, this);
+          this.getTranslate(2, threeTags[1], this.state.lang, this);
+          this.getTranslate(3, threeTags[2], this.state.lang, this);
+
+          // this.setState({
+          //   threeEnglish: threeTags
+          // });
+          // //TODO: THIS IS AN OBJECT BC IT'S ASYNCHRONOUS...
+          // let translatedText = this.getTranslate(toTranslate, this.state.lang);
+          // console.log(`TRANSLATED IS ${translatedText}`)
+          // this.setState({
+          //   description: `${xmlHttp.response.description.captions[0].text} (${this.getTranslate(xmlHttp.response.description.captions[0].text, this.state.lang)})`,
+          //   tag1: `${threeTags[0]} (${this.getTranslate(threeTags[0], this.state.lang)})`,
+          //   tag2: `${threeTags[1]} (${this.getTranslate(threeTags[1], this.state.lang)})`,
+          //   tag3: `${threeTags[2]} (${this.getTranslate(threeTags[2], this.state.lang)})`,
+          //  });
         }
         // debug errors
         else {
@@ -110,7 +119,7 @@ export default class ScanSurroundings extends React.Component {
     xmlHttp.send(data);
   }
 
-  getTranslate = async function(text, lang) {
+  getTranslate = async function(index, text, lang, ctx) {
    const path2 = 'https://api.microsofttranslator.com/V2/Http.svc/Translate?to=' + lang + '&text=' + text;
    console.log(path2);
    var xhr = new XMLHttpRequest();
@@ -118,6 +127,27 @@ export default class ScanSurroundings extends React.Component {
                if (xhr.readyState == 4 && xhr.status == 200){
                  var resp = xhr.response;
                  var translated = resp.substring(68, (resp.length - 9));
+                 var setTo = `${text} (${translated})`;
+                 if(index == 0){
+                   ctx.setState({
+                     description: setTo
+                   })
+                 }
+                 if(index == 1){
+                   ctx.setState({
+                     tag1: setTo
+                    });
+                 }
+                 if(index == 2){
+                   ctx.setState({
+                     tag2: setTo
+                    });
+                 }
+                 if(index == 3){
+                   ctx.setState({
+                     tag3: setTo
+                    });
+                 }
                    return translated;
                } else {
                //    alert(xhr.status);
@@ -343,10 +373,11 @@ export default class ScanSurroundings extends React.Component {
       modal2: false,
     });
     //TODO: Start interval and stuff for collecting photos
+    this.createTaggedPhoto();
   }
 
   changeLang() {
-    const langs = ["en-en", "fr-fr", "ch-ch"];
+    const langs = ["es-es", "fr-fr", "ch-ch"];
     for (var i = 0; i < langs.length; i+=1) {
       if (langs[i] === this.state.lang) {
         this.setState({
