@@ -7,6 +7,7 @@
     "expo-three": "^2.2.2-alpha.1",
     "react": "^16.2.0",
     "react-native": "https://github.com/expo/react-native/archive/sdk-25.0.0.tar.gz",
+    "react-navigation": "^1.0.3",
     "three": "^0.90.0"
   }
 }
