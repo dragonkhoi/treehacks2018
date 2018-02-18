@@ -2,6 +2,7 @@ import React from 'react';
 import { Text, View, TouchableOpacity, Vibration } from 'react-native';
 import { Camera, Permissions, FileSystem, Constants } from 'expo';
 
+//Kelsey's test comment
 const COMPVIS_KEY = "c3c21721bcac419ab22cab24d58518bb";
 const COMPVIS_PARAMS = {
   "visualFeatures": "Description, Tags",
@@ -82,8 +83,12 @@ export default class App extends React.Component {
               //console.log("ready: " + xmlHttp.status);
 
               if(xmlHttp.status === 200){
+<<<<<<< HEAD
                 console.log(xmlHttp.response.description.captions[0].text);
                 console.log(xmlHttp.response.description.tags[3]);
+=======
+                console.log(xmlHttp.response.description.tags);
+>>>>>>> origin/master
               }
               // debug errors
               else {
