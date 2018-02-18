@@ -48,7 +48,7 @@ const styles = {
 };
 const colors = {
   mainButtonTextColor: 'white',
-  mainButtonColor: 'black',
+  mainButtonColor: 'rgba(31, 130, 83, 1)',
   secondaryButtonTextColor: 'black',
   secondaryButtonColor: 'white',
 }
