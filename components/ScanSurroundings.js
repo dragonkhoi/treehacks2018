@@ -73,34 +73,29 @@ export default class ScanSurroundings extends React.Component {
   sendPhotoCompVis(fileLoc) {
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.responseType="json";
+    const data = new FormData();
     xmlHttp.onreadystatechange = (e) => {
       if(xmlHttp.readyState == 4){
         if(xmlHttp.status === 200){
+          console.log(xmlHttp.response);
+
           console.log(xmlHttp.response.description.captions[0].text);
           console.log(xmlHttp.response.description.tags[3]);
           console.log(xmlHttp.response.description.tags);
-
-          //Declaration of language for translation; currently set to French
-          const toTranslate = xmlHttp.response.description.tags[1];
-          // let translatedText = this.getTranslate(toTranslate, lang);
+          var res = xmlHttp.response;
+          var averageConfidence = 0;
+          var totalCount = 0;
+          for(var i = 0; i < xmlHttp.response.tags.length; i++){
+            averageConfidence += xmlHttp.response.tags[i].confidence;
+            totalCount ++;
+          }
+          averageConfidence /= totalCount;
           let threeTags = this.getTagsArray(xmlHttp.response.description.tags);
           this.getTranslate(0, xmlHttp.response.description.captions[0].text, this.state.lang, this);
           this.getTranslate(1, threeTags[0], this.state.lang, this);
           this.getTranslate(2, threeTags[1], this.state.lang, this);
           this.getTranslate(3, threeTags[2], this.state.lang, this);
-
-          // this.setState({
-          //   threeEnglish: threeTags
-          // });
-          // //TODO: THIS IS AN OBJECT BC IT'S ASYNCHRONOUS...
-          // let translatedText = this.getTranslate(toTranslate, this.state.lang);
-          // console.log(`TRANSLATED IS ${translatedText}`)
-          // this.setState({
-          //   description: `${xmlHttp.response.description.captions[0].text} (${this.getTranslate(xmlHttp.response.description.captions[0].text, this.state.lang)})`,
-          //   tag1: `${threeTags[0]} (${this.getTranslate(threeTags[0], this.state.lang)})`,
-          //   tag2: `${threeTags[1]} (${this.getTranslate(threeTags[1], this.state.lang)})`,
-          //   tag3: `${threeTags[2]} (${this.getTranslate(threeTags[2], this.state.lang)})`,
-          //  });
+          this.quickTestCustomVision(data, averageConfidence);
         }
         // debug errors
         else {
@@ -111,13 +106,72 @@ export default class ScanSurroundings extends React.Component {
     xmlHttp.open( "POST", COMPVIS_URL, true);
     xmlHttp.setRequestHeader("Content-Type","multipart/form-data");
     xmlHttp.setRequestHeader("Ocp-Apim-Subscription-Key",COMPVIS_KEY);
-    const data = new FormData();
+
     data.append('photo', {
       uri: fileLoc,
       type: 'image/jpeg',
       name: 'photo'
     });
     xmlHttp.send(data);
+  }
+
+  setCustomPhrase(tagData){
+    var getTagUrl = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/tags/${tagData.TagId}`;
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.responseType="json";
+    xmlHttp.onreadystatechange = (e) => {
+      if(xmlHttp.readyState == 4){
+        if(xmlHttp.status === 200){
+          var combinedString =  xmlHttp.response.Name + ": " + xmlHttp.response.Description;
+          // can't edit tags in custom vision, so have to code it here :(
+          if(xmlHttp.response.Name == "origami crane" || xmlHttp.response.Name == "paper crane"){
+            combinedString =  xmlHttp.response.Name + ": " + "Paper cranes are known to bring good luck in Japan, a sign of healing";
+          }
+          this.getTranslate(0, combinedString, this.state.lang, this);
+          this.setState({
+            tag1: "",
+            tag2: "",
+            tag3: ""
+          })
+        }
+        // debug errors
+        else {
+          console.log(xmlHttp.responseJson);
+        }
+      }
+    }
+    xmlHttp.open( "GET", getTagUrl, true);
+    xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
+    xmlHttp.send();
+
+  }
+
+  quickTestCustomVision(photoData, cvAvg){
+    var cvUrl = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/quicktest/image`;
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.responseType="json";
+    xmlHttp.onreadystatechange = (e) => {
+      if(xmlHttp.readyState == 4){
+        if(xmlHttp.status === 200){
+          var res = xmlHttp.response;
+          console.log("Average for MSFT: " + cvAvg  + " CUSTOM: " + res.Predictions[0].Probability);
+          // give our algorithm a bit of a cushion
+          if(res.Predictions[0].Probability > cvAvg * 0.9){
+            this.setCustomPhrase(res.Predictions[0]);
+          }
+
+
+        }
+        // debug errors
+        else {
+          console.log(xmlHttp.responseJson);
+        }
+      }
+    }
+    xmlHttp.open( "POST", cvUrl, true);
+    xmlHttp.setRequestHeader("Content-Type","multipart/form-data");
+    xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
+    xmlHttp.send(photoData);
   }
 
   getTranslate = async function(index, text, lang, ctx) {
@@ -159,7 +213,7 @@ export default class ScanSurroundings extends React.Component {
          xhr.send(null);
        };
 
-  getTags(){
+  getTags(tagName, description){
     var TAGS_URL = `https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/${CUSTVIS_ID}/tags`;
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.responseType="json";
@@ -169,9 +223,21 @@ export default class ScanSurroundings extends React.Component {
         if(xmlHttp.status === 200){
           console.log(xmlHttp.response);
           var photoIds = [];
+          var match = false;
+          var tagId = "";
           for(var i = 0; i < xmlHttp.response.Tags.length; i++){
             console.log(xmlHttp.response.Tags[i].Id);
-            photoIds.push(xmlHttp.response.Tags[i].Id);
+            photoIds.push(xmlHttp.response.Tags[i].Name);
+            if(tagName == xmlHttp.response.Tags[i].Name){
+              match = true;
+              tagId = xmlHttp.response.Tags[i].Id;
+            }
+          }
+          if(!match){
+            createTag(tagName, description);
+          }
+          else {
+            this.tagAddInterval = setInterval(this.photoBurst.bind(this, tagId),  100);
           }
         }
         else {
@@ -283,10 +349,11 @@ export default class ScanSurroundings extends React.Component {
     // send form data
     var sampleTag = "hellloooo";
     var sampleDescription = "BWAHAHAHA";
-    this.createTag(tag, description);
-
-
+    // checks all tags to see if the tag already exists
+    // if it doesnt, make it, else find the ID and send it
+    this.getTags(tag, description);
   }
+
   takePicture = async function() {
     var fileLoc = `${FileSystem.documentDirectory}photos/Photo_${this.state.photoId}.jpg`;
     if(this.camera) {
