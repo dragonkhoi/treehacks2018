@@ -306,7 +306,9 @@ export default class ScanSurroundings extends React.Component {
     // UI prompt for tag
     // UI Prompt for description/info
     // send form data
-    this.tagAddInterval = setInterval(this.photoBurst.bind(this), 100);
+    var sampleTag = "hellloooo";
+    var sampleDescription = "BWAHAHAHA";
+    this.tagAddInterval = setInterval(this.photoBurst.bind(this,sampleTag,sampleDescription),  100);
 
   }
   takePicture = async function() {
