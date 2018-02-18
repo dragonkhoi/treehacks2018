@@ -38,6 +38,7 @@ export default class ScanSurroundings extends React.Component {
     modal2: false,
     myTag: "",
     myDesc: "",
+    tagAddCounter: 0
   };
 
   async componentWillMount() {
@@ -108,7 +109,23 @@ export default class ScanSurroundings extends React.Component {
     });
     xmlHttp.send(data);
   }
-
+  getTranslate = async function(text, lang) {
+       const path2 = 'https://api.microsofttranslator.com/V2/Http.svc/Translate?to=' + lang + '&text=' + text;
+       console.log(path2);
+       var xhr = new XMLHttpRequest();
+       xhr.onreadystatechange = function() {
+                   if (xhr.readyState == 4 && xhr.status == 200){
+                     var resp = xhr.response;
+                     var translated = resp.substring(68, (resp.length - 9));
+                       return translated;
+                   } else {
+                   //    alert(xhr.status);
+                   }
+               }
+             xhr.open( "GET", path2, true);
+             xhr.setRequestHeader("Ocp-Apim-Subscription-Key","ba9158a351f94a46bbdd9df094428ecb");
+             xhr.send(null);
+     };
   // sendPhotoTags(tagData) {
   //   console.log(tagData);
   //   var POSTTAG_URL = "https://southcentralus.api.cognitive.microsoft.com/customvision/v1.2/Training/projects/c1e36469-83dc-433c-8044-fa7ef7f31117/images/tags";
@@ -242,8 +259,17 @@ export default class ScanSurroundings extends React.Component {
     xmlHttp.send();
   }
 
-  photoBurst(ctx) {
+  photoBurst() {
     const photoData = new FormData();
+    this.setState({
+      tagAddCounter: this.state.tagAddCounter + 1
+    });
+    if(this.state.tagAddCounter > 30){
+      clearInterval(this.tagAddInterval);
+      this.setState({
+        tagAddCounter: 0
+      });
+    }
     var fileLoc = `${FileSystem.documentDirectory}photos/Photo_${ctx.state.photoId}.jpg`;
     if(ctx.camera) {
       ctx.camera.takePictureAsync().then(data => {
@@ -281,41 +307,7 @@ export default class ScanSurroundings extends React.Component {
     // UI prompt for tag
     // UI Prompt for description/info
     // send form data
-    var counter = 0;
-    var photoBurst = setInterval(function(this){
-      counter++;
-
-      const photoData = new FormData();
-      var fileLoc = `${FileSystem.documentDirectory}photos/Photo_${ctx.state.photoId}.jpg`;
-      if(ctx.camera) {
-        ctx.camera.takePictureAsync().then(data => {
-          FileSystem.moveAsync({
-            from: data.uri,
-            to: fileLoc,
-          }).then(() => {
-            ctx.setState({
-              photoId: ctx.state.photoId + 1,
-            });
-
-            photoData.append('photo', {
-              uri: fileLoc,
-              type: 'image/jpeg',
-              name: 'photo',
-              TagsIds: [
-                "puppy"
-              ],
-              Tags: [
-                "puppy"
-              ]
-            });
-            var tag, description;
-            tag = "test234234";
-            description = "test description, it is super good, SOOOOO great, amazing, wauw, so good, wow, excellent description!";
-            ctx.createTag(photoData, tag, description);
-          });
-        });
-      }
-    }, 100);
+    this.tagAddInterval = setInterval(this.photoBurst.bind(this), 100);
 
   }
   takePicture = async function() {
@@ -489,7 +481,6 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-around',
     alignSelf: 'stretch',
-    justifySelf: 'flex-end',
     marginLeft: 20,
     marginRight: 20,
     marginBottom: 10,
