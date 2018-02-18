@@ -2,9 +2,10 @@ import React from 'react';
 import { Text, View, TouchableOpacity, Vibration } from 'react-native';
 import { Camera, Permissions, FileSystem, Constants } from 'expo';
 
+//Kelsey's test comment
 const COMPVIS_KEY = "c3c21721bcac419ab22cab24d58518bb";
 const COMPVIS_PARAMS = {
-  "visualFeatures": "Description", "Tags",
+  "visualFeatures": "Description, Tags",
   "language": "en",
 };
 const COMPVIS_URL = `https://westus.api.cognitive.microsoft.com/vision/v1.0/analyze?visualFeatures=${COMPVIS_PARAMS.visualFeatures}&language=${COMPVIS_PARAMS.language}`;
@@ -82,7 +83,7 @@ export default class App extends React.Component {
               //console.log("ready: " + xmlHttp.status);
 
               if(xmlHttp.status === 200){
-                console.log(xmlHttp.response.description.captions[0].text);
+                console.log(xmlHttp.response.description.tags);
               }
               // debug errors
               else {
