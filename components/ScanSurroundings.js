@@ -1,7 +1,9 @@
 import React from 'react';
-import { Text, View, TouchableOpacity, Vibration } from 'react-native';
+import { Text, View, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { Camera, Permissions, FileSystem, Constants } from 'expo';
 import PushDown from './common/PushDown';
+import { Button, Input } from './common';
+import ModalWithButton from './ModalWithButton';
 
 const COMPVIS_KEY = "c3c21721bcac419ab22cab24d58518bb";
 const COMPVIS_PARAMS = {
@@ -31,6 +33,11 @@ export default class ScanSurroundings extends React.Component {
     tag1: "...",
     tag2: "...",
     tag3: "...",
+    lang: "es-es",
+    modal1: false,
+    modal2: false,
+    myTag: "",
+    myDesc: "",
   };
 
   async componentWillMount() {
@@ -38,10 +45,15 @@ export default class ScanSurroundings extends React.Component {
     this.setState({ hasCameraPermission: status === 'granted' });
   }
 
+  componentWillUnmount() {
+    clearInterval(this.takePicInterval);
+  }
+
   componentDidMount() {
     FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + 'photos').catch(e => {
       console.log(e, 'Directory exists');
     });
+    this.takePicInterval = setInterval(this.takePicture.bind(this), 2000);
   }
 
   getRatios = async () => {
@@ -68,15 +80,17 @@ export default class ScanSurroundings extends React.Component {
           console.log(xmlHttp.response.description.tags);
 
           //Declaration of language for translation; currently set to French
-          const lang = 'fr-fr';
           const toTranslate = xmlHttp.response.description.tags[1];
-          console.log(this.getTranslate(toTranslate, lang));
-
+          // let translatedText = this.getTranslate(toTranslate, lang);
+          let threeTags = this.getTags(xmlHttp.response.description.tags);
+          //TODO: THIS IS AN OBJECT BC IT'S ASYNCHRONOUS...
+          let translatedText = this.getTranslate(toTranslate, this.state.lang);
+          console.log(`TRANSLATED IS ${translatedText}`)
           this.setState({
-            description: xmlHttp.response.description.captions[0].text,
-            tag1: xmlHttp.response.description.tags[0],
-            tag2: xmlHttp.response.description.tags[1],
-            tag3: xmlHttp.response.description.tags[2],
+            description: `${xmlHttp.response.description.captions[0].text} (${this.getTranslate(xmlHttp.response.description.captions[0].text, this.state.lang)})`,
+            tag1: `${threeTags[0]} (${this.getTranslate(threeTags[0], this.state.lang)})`,
+            tag2: `${threeTags[1]} (${this.getTranslate(threeTags[1], this.state.lang)})`,
+            tag3: `${threeTags[2]} (${this.getTranslate(threeTags[2], this.state.lang)})`,
            });
         }
         // debug errors
@@ -182,6 +196,15 @@ export default class ScanSurroundings extends React.Component {
     xmlHttp.setRequestHeader("Training-key",CUSTVIS_KEY);
     xmlHttp.send();
   }
+  getTagsArray(tagArr) {
+    for (var i = 0; i < 3; i+=1) {
+      if (tagArr[i] === "indoor" || tagArr[i] === "indoors") {
+        tagArr[i] = tagArr[3];
+      }
+    }
+    console.log(`TAGARR: ${tagArr.slice(0,3)}`)
+    return tagArr.slice(0, 3);
+  }
   sendPhotoCustVis(formData){
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.responseType="json";
@@ -219,7 +242,7 @@ export default class ScanSurroundings extends React.Component {
           this.setState({
             photoId: this.state.photoId + 1,
           });
-          Vibration.vibrate();
+          // Vibration.vibrate();
           photoData.append('photo', {
             uri: fileLoc,
             type: 'image/jpeg',
@@ -248,12 +271,38 @@ export default class ScanSurroundings extends React.Component {
           this.setState({
             photoId: this.state.photoId + 1,
           });
-          Vibration.vibrate();
+          // Vibration.vibrate();
           this.sendPhotoCompVis(fileLoc);
         });
       });
     }
   };
+
+  submitTags() {
+    this.setState({
+      modal1: false,
+      modal2: true,
+    });
+  }
+
+  startCollectingPhotos() {
+    this.setState({
+      modal2: false,
+    });
+    //TODO: Start interval and stuff for collecting photos
+  }
+
+  changeLang() {
+    const langs = ["en-en", "fr-fr", "ch-ch"];
+    for (var i = 0; i < langs.length; i+=1) {
+      if (langs[i] === this.state.lang) {
+        this.setState({
+          lang: langs[(i + 1) % langs.length]
+        });
+      }
+    }
+
+  }
 
   render() {
     const { hasCameraPermission } = this.state;
@@ -275,51 +324,57 @@ export default class ScanSurroundings extends React.Component {
             whiteBalance={this.state.whiteBalance}
             ratio={this.state.ratio}
             focusDepth={this.state.depth}>
+            {this.state.modal1 &&
+              <ModalWithButton
+              onButtonPress={this.submitTags.bind(this)}
+              buttonTitle="Submit"
+            >
+              <Input
+                label="What is meaningful about this photo?"
+                onChangeText={myDesc => this.setState({ myDesc })}
+              >
+              </Input>
+              <Input
+                label="What's the best tag for this image'?"
+                onChangeText={myTag => this.setState({ myTag })}
+              >
+              </Input>
+            </ModalWithButton>
+          }
+          {this.state.modal2 &&
+            <ModalWithButton
+            onButtonPress={this.startCollectingPhotos.bind(this)}
+            buttonTitle="OK"
+          >
+          <Text style={styles.modalTextStyle}>After you click "OK", the phone will capture images of your surroundings. Move the phone slowly.</Text>
+          </ModalWithButton>
+          }
               <View style={styles.cameraView}>
-                <View style={styles.descView}>
-                  <Text style={styles.textStyle}>{this.state.description}</Text>
+                <View style={styles.descTagView}>
+                  <View style={styles.descView}>
+                    <Text style={styles.textStyle}>{this.state.description}</Text>
+                  </View>
+                  <View style={styles.tagContainerView}>
+                    <View style={styles.tagView}>
+                      <Text style={styles.textStyleSmall}>{this.state.tag1}</Text>
+                    </View>
+                    <View style={styles.tagView}>
+                      <Text style={styles.textStyleSmall}>{this.state.tag2}</Text>
+                    </View>
+                    <View style={styles.tagView}>
+                      <Text style={styles.textStyleSmall}>{this.state.tag3}</Text>
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.tagContainerView}>
-                  <View style={styles.tagView}>
-                    <Text style={styles.textStyleSmall}>{this.state.tag1}</Text>
-                  </View>
-                  <View style={styles.tagView}>
-                    <Text style={styles.textStyleSmall}>{this.state.tag2}</Text>
-                  </View>
-                  <View style={styles.tagView}>
-                    <Text style={styles.textStyleSmall}>{this.state.tag3}</Text>
-                  </View>
-                </View>
-              <View
-                style={{
-                  flex: 1,
-                  backgroundColor: 'transparent',
-                  flexDirection: 'row',
-                }}>
-                <TouchableOpacity
-                  style={{
-                    flex: 0.1,
-                    alignSelf: 'flex-end',
-                    alignItems: 'center',
-                  }}
-                  onPress={this.takePicture.bind(this)}>
-                  <Text
-                    style={{ fontSize: 18, marginBottom: 10, color: 'white' }}>
-                    {' '}TRANSLATE{' '}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{
-                    flex: 0.1,
-                    alignSelf: 'flex-end',
-                    alignItems: 'center',
-                  }}
-                  onPress={this.createTaggedPhoto.bind(this)}>
-                  <Text
-                    style={{ fontSize: 18, marginBottom: 10, color: 'white' }}>
-                    {' '}tag{' '}
-                  </Text>
-                </TouchableOpacity>
+              <View style={styles.buttonContainerView}>
+                  <Button
+                    title="Contribute"
+                    onPress={() => { this.setState({ modal1: true }); }}
+                  />
+                  <Button
+                    title={this.state.lang}
+                    onPress={this.changeLang.bind(this)}
+                  />
               </View>
             </View>
           </Camera>
@@ -333,13 +388,16 @@ const styles = {
     display: 'flex',
     flex: 1,
     flexDirection: 'column',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     alignItems: 'stretch',
     backgroundColor: 'transparent',
   },
+  descTagView: {
+    height: 120
+  },
   descView: {
     backgroundColor: 'white',
-    height: 50,
+    height: 60,
     margin: 20,
     marginTop: 30,
     borderRadius: 4,
@@ -359,12 +417,24 @@ const styles = {
   },
   tagView: {
     backgroundColor: 'white',
-    height: 30,
+    height: 40,
     width: 80,
     borderRadius: 4,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  buttonContainerView: {
+    backgroundColor: 'transparent',
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    alignSelf: 'stretch',
+    justifySelf: 'flex-end',
+    marginLeft: 20,
+    marginRight: 20,
+    marginBottom: 10,
   },
   textStyle: {
     color: 'rgba(31, 130, 83, 1)',
@@ -375,5 +445,13 @@ const styles = {
     color: 'rgba(31, 130, 83, 1)',
     fontSize: 13,
     textAlign: 'center',
-  }
+  },
+  modalTextStyle: {
+  margin: 15,
+  fontSize: 16,
+  textAlign: 'center',
+  lineHeight: 30,
+  color: 'black',
+},
+
 };
