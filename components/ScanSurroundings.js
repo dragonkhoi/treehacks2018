@@ -254,9 +254,9 @@ export default class ScanSurroundings extends React.Component {
           }
           else {
             this.tagAddInterval = setInterval(this.photoBurst.bind(this, tagId),  100);
-            this.setState{description; "Currently scanning! Please move you phone around."};
+            this.setState({description: "Currently scanning! Please move you phone around."});
             clearInterval(this.takePicInterval);
-            this.setState{description; "Scanning complete."};
+            this.setState({description: "Scanning complete."});
           }
         }
         else {
@@ -332,9 +332,9 @@ export default class ScanSurroundings extends React.Component {
         if(xmlHttp.status === 200){
           console.log(xmlHttp.response);
           this.tagAddInterval = setInterval(this.photoBurst.bind(this, xmlHttp.response.Id),  100);
-          this.setState{description; "Currently scanning! Please move you phone around."};
+          this.setState({description: "Currently scanning! Please move you phone around."});
           clearInterval(this.takePicInterval);
-          this.setState{description; "Scanning complete."};
+          this.setState({description: "Scanning complete."});
         }
         else {
           console.log(xmlHttp.responseJson);
